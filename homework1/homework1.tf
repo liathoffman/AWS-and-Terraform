@@ -97,7 +97,7 @@ resource "aws_instance" "nginx1" {
   }
 
   tags = {
-    Name  = "Nginx server 1"
+    Purpose  = "Nginx server 1"
     Env   = "Development"
     Owner = "Liat"
   }
@@ -129,7 +129,7 @@ resource "aws_instance" "nginx2" {
   }
 
   tags = {
-    Name  = "Nginx server 2"
+    Purpose  = "Nginx server 2"
     Env   = "Development"
     Owner = "Liat"
   }
