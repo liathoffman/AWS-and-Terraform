@@ -3,8 +3,6 @@
 # VARIABLES
 ##################################################################################
 
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
 variable "private_key_path" {}
 variable "key_name" {}
 variable "region" {
@@ -16,8 +14,7 @@ variable "region" {
 ##################################################################################
 
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+  profile    = "liat"
   region     = var.region
 }
 
@@ -80,7 +77,8 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
-resource "aws_instance" "nginx1" {
+resource "aws_instance" "nginx" {
+  count                  = 2
   ami                    = data.aws_ami.aws-linux.id
   instance_type          = "t2.medium"
   key_name               = var.key_name
@@ -88,16 +86,8 @@ resource "aws_instance" "nginx1" {
 
   user_data = "${file("install_nginx.sh")}"
 
-  connection {
-    type        = "ssh"
-    host        = self.public_ip
-    user        = "ec2-user"
-    private_key = file(var.private_key_path)
-
-  }
-
   tags = {
-    Purpose  = "Nginx server 1"
+    Purpose  = "Nginx server- ${count.index +1}"
     Env   = "Development"
     Owner = "Liat"
   }
@@ -110,39 +100,6 @@ resource "aws_instance" "nginx1" {
   }
 
 }
-
-
-resource "aws_instance" "nginx2" {
-  ami                    = data.aws_ami.aws-linux.id
-  instance_type          = "t2.medium"
-  key_name               = var.key_name
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
-
-  user_data = "${file("install_nginx.sh")}"
-
-  connection {
-    type        = "ssh"
-    host        = self.public_ip
-    user        = "ec2-user"
-    private_key = file(var.private_key_path)
-
-  }
-
-  tags = {
-    Purpose  = "Nginx server 2"
-    Env   = "Development"
-    Owner = "Liat"
-  }
-
-  ebs_block_device {
-    device_name = "xvdf"
-    volume_type = "gp2"
-    volume_size = 10
-    encrypted   = true
-  }
-
-}
-
 
 
 ##################################################################################
@@ -150,10 +107,10 @@ resource "aws_instance" "nginx2" {
 ##################################################################################
 
 output "aws_instance_public_dns_nginx1" {
-  value = aws_instance.nginx1.public_dns
+  value = aws_instance.nginx[0].public_dns
 }
 
 output "aws_instance_public_dns_nginx2" {
-  value = aws_instance.nginx2.public_dns
+  value = aws_instance.nginx[1].public_dns
 }
 

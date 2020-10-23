@@ -2,5 +2,6 @@
 *.tfplan
 *.tfstate
 *.tfstate.backup
+*.terraform.tfstate.lock.info
 /.terraform
 
