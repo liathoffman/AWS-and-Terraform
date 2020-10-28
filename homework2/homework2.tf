@@ -65,7 +65,6 @@ resource "aws_vpc" "vpc" {
 
 resource "aws_subnet" "public_subnet" {
   count                   = 2
-  depends_on              = [aws_vpc.vpc]
   cidr_block              = var.public_subnet_address_space[count]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
@@ -77,7 +76,6 @@ resource "aws_subnet" "public_subnet" {
 
 resource "aws_subnet" "private_subnet" {
   count                   = 0
-  depends_on              = [aws_vpc.vpc]
   cidr_block              = var.private_subnet_address_space[count]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
@@ -88,11 +86,6 @@ resource "aws_subnet" "private_subnet" {
 }
 
 resource "aws_internet_gateway" "igw" {
-  depends_on = [
-      aws_vpc.vpc,
-      aws_subnet.public_subnet,
-      aws_subnet.private_subnet
-  ]
   vpc_id = aws_vpc.vpc.id
 }
 
@@ -100,10 +93,6 @@ resource "aws_internet_gateway" "igw" {
 
 # ROUTING #
 resource "aws_route_table" "public_rt" {
-  depends_on = [
-      aws_vpc.vpc,
-      aws_internet_gateway.igw
-  ]
   vpc_id = aws_vpc.vpc.id
 
   route {
@@ -117,58 +106,43 @@ resource "aws_route_table" "public_rt" {
 }
 
 resource "aws_route_table_association" "rta-IG-association" {
-  depends_on = [
-      aws_vpc.vpc,
-      aws_subnet.public_subnet,
-      aws_subnet.private_subnet,
-      aws_route_table.public_rt
-  ]
+  count          = 2
 
-  subnet_id      = aws_subnet.public_subnet.id
+  subnet_id      = aws_subnet.public_subnet[count].id
   route_table_id = aws_route_table.public_rt.id
 }
 
 resource "aws_eip" "elastic_ip_for_nat" {
-  depends_on = [
-      aws_route_table_association.rta-IG-association
-  ]
+  count = 2
   vpc = true
 }
 
 resource "aws_nat_gateway" "ngw" {
-    depends_on = [
-        aws_eip.elastic_ip_for_nat
-    ]
-  allocation_id = aws_eip.elastic_ip_for_nat.id
-  subnet_id     = aws_subnet.public_subnet.id
+  count         = 2
+  allocation_id = aws_eip.elastic_ip_for_nat[count].id
+  subnet_id     = aws_subnet.public_subnet[count].id
 }
 
 resource "aws_route_table" "nat-gateway-rt" {
-    depends_on = [
-        aws_nat_gateway.ngw
-    ]
-
+    count  = 2
     vpc_id = aws_vpc.vpc.id
 
     route {
         cidr_block = "0.0.0.0/0"
-        nat_gateway_id = aws_nat_gateway.ngw.id
+        nat_gateway_id = aws_nat_gateway.ngw[count].id
     }
 
     tags = {
-        Name = "Route table for NAT Gateway"
+        Name = "Route table for NAT Gateway-AZ-${count.index + 1}"
     }
 
 }
 
 resource "aws_route_table_association" "nat-gateway-rt-association" {
-    depends_on = [
-        aws_route_table.nat-gateway-rt
-    ]
+    count     = 2
+    subnet_id = aws_subnet.private_subnet[count].id
 
-    subnet_id = aws_subnet.private_subnet.id
-
-    route_table_id = aws_route_table.nat-gateway-rt.id
+    route_table_id = aws_route_table.nat-gateway-rt[count].id
 
 }
 
