@@ -231,7 +231,7 @@ resource "aws_instance" "nginx" {
   user_data                   = "${file("install_nginx.sh")}"
 
   tags = {
-    Name = "nginx-${count.index + 1}"
+    Name = "nginx-AZ-${count.index + 1}"
   }
 
 }
