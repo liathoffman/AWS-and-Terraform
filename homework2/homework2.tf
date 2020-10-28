@@ -146,6 +146,7 @@ resource "aws_route_table_association" "nat-gateway-rt-association" {
 }
 
 # SECURITY GROUPS #
+resource "aws_security_group" "elb-sg" {
   name   = "nginx_elb_sg"
   vpc_id = aws_vpc.vpc.id
 
