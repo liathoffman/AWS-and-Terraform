@@ -64,24 +64,26 @@ resource "aws_vpc" "vpc" {
 }
 
 resource "aws_subnet" "public_subnet" {
+  count                   = 2
   depends_on              = [aws_vpc.vpc]
-  cidr_block              = var.public_subnet_address_space
+  cidr_block              = var.public_subnet_address_space[count]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
-  availability_zone       = data.aws_availability_zones.available.names[0]
+  availability_zone       = data.aws_availability_zones.available.names[count]
   tags = {
-      Name = "public subnet"
+      Name = "public subnet-AZ-${count.index + 1}"
   }
 }
 
 resource "aws_subnet" "private_subnet" {
+  count                   = 0
   depends_on              = [aws_vpc.vpc]
-  cidr_block              = var.private_subnet_address_space
+  cidr_block              = var.private_subnet_address_space[count]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
-  availability_zone       = data.aws_availability_zones.available.names[1]
+  availability_zone       = data.aws_availability_zones.available.names[count]
     tags = {
-      Name = "private subnet"
+      Name = "private subnet-AZ-${count.index + 1}"
   }
 }
 
