@@ -65,10 +65,10 @@ resource "aws_vpc" "vpc" {
 
 resource "aws_subnet" "public_subnet" {
   count                   = 2
-  cidr_block              = var.public_subnet_address_space[count]
+  cidr_block              = var.public_subnet_address_space[count.index]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
-  availability_zone       = data.aws_availability_zones.available.names[count]
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   tags = {
       Name = "public subnet-AZ-${count.index + 1}"
   }
@@ -76,10 +76,10 @@ resource "aws_subnet" "public_subnet" {
 
 resource "aws_subnet" "private_subnet" {
   count                   = 0
-  cidr_block              = var.private_subnet_address_space[count]
+  cidr_block              = var.private_subnet_address_space[count.index]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
-  availability_zone       = data.aws_availability_zones.available.names[count]
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
     tags = {
       Name = "private subnet-AZ-${count.index + 1}"
   }
@@ -108,7 +108,7 @@ resource "aws_route_table" "public_rt" {
 resource "aws_route_table_association" "rta-IG-association" {
   count          = 2
 
-  subnet_id      = aws_subnet.public_subnet[count].id
+  subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_rt.id
 }
 
@@ -119,8 +119,8 @@ resource "aws_eip" "elastic_ip_for_nat" {
 
 resource "aws_nat_gateway" "ngw" {
   count         = 2
-  allocation_id = aws_eip.elastic_ip_for_nat[count].id
-  subnet_id     = aws_subnet.public_subnet[count].id
+  allocation_id = aws_eip.elastic_ip_for_nat[count.index].id
+  subnet_id     = aws_subnet.public_subnet[count.index].id
 }
 
 resource "aws_route_table" "nat-gateway-rt" {
@@ -129,7 +129,7 @@ resource "aws_route_table" "nat-gateway-rt" {
 
     route {
         cidr_block = "0.0.0.0/0"
-        nat_gateway_id = aws_nat_gateway.ngw[count].id
+        nat_gateway_id = aws_nat_gateway.ngw[count.index].id
     }
 
     tags = {
@@ -140,20 +140,12 @@ resource "aws_route_table" "nat-gateway-rt" {
 
 resource "aws_route_table_association" "nat-gateway-rt-association" {
     count     = 2
-    subnet_id = aws_subnet.private_subnet[count].id
-
-    route_table_id = aws_route_table.nat-gateway-rt[count].id
+    subnet_id = aws_subnet.private_subnet[count.index].id
+    route_table_id = aws_route_table.nat-gateway-rt[count.index].id
 
 }
 
 # SECURITY GROUPS #
-resource "aws_security_group" "elb-sg" {
-  depends_on = [
-      aws_vpc.vpc,
-      aws_subnet.public_subnet,
-      aws_subnet.private_subnet
-  ]
-
   name   = "nginx_elb_sg"
   vpc_id = aws_vpc.vpc.id
 
@@ -228,18 +220,10 @@ resource "aws_security_group" "db-sg" {
 
 # INSTANCES #
 resource "aws_instance" "nginx" {
-  depends_on = [
-      aws_vpc.vpc,
-      aws_subnet.public_subnet,
-      aws_subnet.private_subnet,
-      aws_security_group.elb-sg,
-      aws_security_group.instance-sg
-  ]
-
   count                       = 2
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = "t2.micro"
-  subnet_id                   = aws_subnet.public_subnet.id
+  subnet_id                   = aws_subnet.public_subnet[count.index].id
   vpc_security_group_ids      = [aws_security_group.instance-sg.id]
   key_name                    = var.key_name
   associate_public_ip_address = true
@@ -252,13 +236,10 @@ resource "aws_instance" "nginx" {
 }
 
 resource "aws_instance" "db-server" {
-  depends_on = [
-      aws_subnet.private_subnet
-  ]
   count                  = 2
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
-  subnet_id              = aws_subnet.private_subnet.id
+  subnet_id              = aws_subnet.private_subnet[count.index].id
   vpc_security_group_ids = [aws_security_group.db-sg.id]
   key_name               = var.key_name
 
