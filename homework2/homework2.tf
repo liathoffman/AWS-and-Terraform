@@ -244,20 +244,14 @@ resource "aws_instance" "db-server" {
   key_name               = var.key_name
 
   tags = {
-      Name                   = "db-server-${count.index + 1}"
+      Name                   = "db-server-az-${count.index + 1}"
   }
 }
 
 # LOAD BALANCER #
 resource "aws_elb" "web" {
-  depends_on = [
-      aws_subnet.public_subnet,
-      aws_subnet.private_subnet,
-      aws_instance.nginx[0],
-      aws_instance.nginx[1]
-  ]
   name            = "web"
-  subnets         = [aws_subnet.public_subnet.id]
+  subnets         = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id]
   security_groups = [aws_security_group.elb-sg.id]
   instances       = [aws_instance.nginx[0].id, aws_instance.nginx[1].id]
   cross_zone_load_balancing = true
