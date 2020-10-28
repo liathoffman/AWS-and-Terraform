@@ -59,7 +59,7 @@ data "aws_ami" "ubuntu" {
 
 # NETWORKING #
 resource "aws_vpc" "vpc" {
-  cidr_block = var.network_address_space
+  cidr_block           = var.network_address_space
   enable_dns_hostnames = true
 }
 
@@ -70,18 +70,18 @@ resource "aws_subnet" "public_subnet" {
   map_public_ip_on_launch = "true"
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   tags = {
-      Name = "public subnet-AZ-${count.index + 1}"
+    Name = "public subnet-AZ-${count.index + 1}"
   }
 }
 
 resource "aws_subnet" "private_subnet" {
-  count                   = 0
+  count                   = 2
   cidr_block              = var.private_subnet_address_space[count.index]
   vpc_id                  = aws_vpc.vpc.id
   map_public_ip_on_launch = "true"
   availability_zone       = data.aws_availability_zones.available.names[count.index]
-    tags = {
-      Name = "private subnet-AZ-${count.index + 1}"
+  tags = {
+    Name = "private subnet-AZ-${count.index + 1}"
   }
 }
 
@@ -101,12 +101,12 @@ resource "aws_route_table" "public_rt" {
   }
 
   tags = {
-      Name = "Route table for Internet Gateway"
+    Name = "Route table for Internet Gateway"
   }
 }
 
 resource "aws_route_table_association" "rta-IG-association" {
-  count          = 2
+  count = 2
 
   subnet_id      = aws_subnet.public_subnet[count.index].id
   route_table_id = aws_route_table.public_rt.id
@@ -114,7 +114,7 @@ resource "aws_route_table_association" "rta-IG-association" {
 
 resource "aws_eip" "elastic_ip_for_nat" {
   count = 2
-  vpc = true
+  vpc   = true
 }
 
 resource "aws_nat_gateway" "ngw" {
@@ -124,24 +124,24 @@ resource "aws_nat_gateway" "ngw" {
 }
 
 resource "aws_route_table" "nat-gateway-rt" {
-    count  = 2
-    vpc_id = aws_vpc.vpc.id
+  count  = 2
+  vpc_id = aws_vpc.vpc.id
 
-    route {
-        cidr_block = "0.0.0.0/0"
-        nat_gateway_id = aws_nat_gateway.ngw[count.index].id
-    }
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.ngw[count.index].id
+  }
 
-    tags = {
-        Name = "Route table for NAT Gateway-AZ-${count.index + 1}"
-    }
+  tags = {
+    Name = "Route table for NAT Gateway-AZ-${count.index + 1}"
+  }
 
 }
 
 resource "aws_route_table_association" "nat-gateway-rt-association" {
-    count     = 2
-    subnet_id = aws_subnet.private_subnet[count.index].id
-    route_table_id = aws_route_table.nat-gateway-rt[count.index].id
+  count          = 2
+  subnet_id      = aws_subnet.private_subnet[count.index].id
+  route_table_id = aws_route_table.nat-gateway-rt[count.index].id
 
 }
 
@@ -209,7 +209,7 @@ resource "aws_security_group" "db-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-    # SSH access from VPC
+  # SSH access from VPC
   ingress {
     from_port   = 22
     to_port     = 22
@@ -231,7 +231,7 @@ resource "aws_instance" "nginx" {
   user_data                   = "${file("install_nginx.sh")}"
 
   tags = {
-      Name                        = "nginx-${count.index + 1}"
+    Name = "nginx-${count.index + 1}"
   }
 
 }
@@ -245,19 +245,19 @@ resource "aws_instance" "db-server" {
   key_name               = var.key_name
 
   tags = {
-      Name                   = "db-server-az-${count.index + 1}"
+    Name = "db-server-az-${count.index + 1}"
   }
 }
 
 # LOAD BALANCER #
 resource "aws_elb" "web" {
-  name            = "web"
-  subnets         = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id]
-  security_groups = [aws_security_group.elb-sg.id]
-  instances       = [aws_instance.nginx[0].id, aws_instance.nginx[1].id]
-  cross_zone_load_balancing = true
-  idle_timeout = 400
-  connection_draining = true
+  name                        = "web"
+  subnets                     = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id]
+  security_groups             = [aws_security_group.elb-sg.id]
+  instances                   = [aws_instance.nginx[0].id, aws_instance.nginx[1].id]
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
   connection_draining_timeout = 400
 
   listener {
