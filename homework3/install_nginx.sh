@@ -1,5 +1,5 @@
 #!/bin/bash
-HOSTNAME = curl http://169.254.169.254/latest/meta-data/hostname
+export HOSTNAME = curl http://169.254.169.254/latest/meta-data/hostname
 sudo apt-get update
 sudo apt-get install -y nginx
 sudo systemctl start nginx
