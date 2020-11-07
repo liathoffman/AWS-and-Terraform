@@ -284,19 +284,6 @@ resource "aws_instance" "nginx" {
   tags = {
     Name = "nginx-AZ-${count.index + 1}"
   }
-
- # provisioner "file" {
-  #  source = "script.sh"
-  #  destination = "/tmp/script.sh"
- # }
-
- # provisioner "remote-exec" {
-  #  inline = [
-   #   "chmod +x /tmp/script.sh",
-   #   "/tmp/script.sh"
-   # ]
- # }
-
 }
 
 resource "aws_instance" "db-server" {
