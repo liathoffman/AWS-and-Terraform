@@ -24,6 +24,7 @@ variable "private_subnet_address_space" {
   default = ["10.0.64.0/18", "10.0.128.0/17"]
 }
 
+
 ##################################################################################
 # DATA
 ##################################################################################
@@ -44,6 +45,8 @@ data "aws_ami" "ubuntu" {
     values = ["hvm"]
   }
 }
+
+data "aws_elb_service_account" "main" {}
 
 ##################################################################################
 # RESOURCES
@@ -211,6 +214,60 @@ resource "aws_security_group" "db-sg" {
   }
 }
 
+# IAM ROLES #
+
+resource "aws_iam_instance_profile" "s3_profile" {
+  name = "s3_profile"
+  role = aws_iam_role.s3_role.name
+}
+
+resource "aws_iam_role" "s3_role" {
+  name = "s3_role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+
+resource "aws_iam_role_policy" "s3_policy" {
+  name = "s3_policy"
+  role = aws_iam_role.s3_role.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "s3:*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+
+# S3 Bucket #
+resource "aws_s3_bucket" "nginx_logs" {
+  bucket = "liat-nginx-logs-282837837882"
+  acl    = "private"
+}
+
 
 # INSTANCES #
 resource "aws_instance" "nginx" {
@@ -222,10 +279,23 @@ resource "aws_instance" "nginx" {
   key_name                    = var.key_name
   associate_public_ip_address = true
   user_data                   = "${file("install_nginx.sh")}"
+  iam_instance_profile        = aws_iam_instance_profile.s3_profile.name
 
   tags = {
     Name = "nginx-AZ-${count.index + 1}"
   }
+
+ # provisioner "file" {
+  #  source = "script.sh"
+  #  destination = "/tmp/script.sh"
+ # }
+
+ # provisioner "remote-exec" {
+  #  inline = [
+   #   "chmod +x /tmp/script.sh",
+   #   "/tmp/script.sh"
+   # ]
+ # }
 
 }
 
@@ -243,39 +313,67 @@ resource "aws_instance" "db-server" {
 }
 
 # LOAD BALANCER #
-resource "aws_elb" "web" {
+resource "aws_lb" "web" {
   name                        = "web"
+  internal                    = false
+  load_balancer_type          = "application"
   subnets                     = [aws_subnet.public_subnet[0].id, aws_subnet.public_subnet[1].id]
   security_groups             = [aws_security_group.elb-sg.id]
-  instances                   = [aws_instance.nginx[0].id, aws_instance.nginx[1].id]
-  cross_zone_load_balancing   = true
-  idle_timeout                = 400
-  connection_draining         = true
-  connection_draining_timeout = 400
+}
 
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 80
-    lb_protocol       = "http"
+  resource "aws_lb_target_group" "for_web" {
+  name     = "web-target-group"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.vpc.id
+  stickiness{
+    type = "lb_cookie"
+    cookie_duration = 60
+    enabled = true
   }
 
   health_check {
+    enabled             = true
+    path                = "/"
+    port                = "traffic-port"
     healthy_threshold   = 2
     unhealthy_threshold = 2
     timeout             = 3
-    target              = "HTTP:80/"
+    matcher             = "200-299"
     interval            = 30
   }
-
 }
+  
+resource "aws_lb_target_group_attachment" "for_web1" {
+  target_group_arn = aws_lb_target_group.for_web.arn
+  target_id        = aws_instance.nginx[0].id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "for_web2" {
+  target_group_arn = aws_lb_target_group.for_web.arn
+  target_id        = aws_instance.nginx[1].id
+  port             = 80
+}
+
+resource "aws_lb_listener" "web-servers" {
+  load_balancer_arn = aws_lb.web.arn
+  port = "80"
+  protocol = "HTTP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.for_web.arn
+  }
+}
+
 
 ##################################################################################
 # OUTPUT
 ##################################################################################
 
 output "elb" {
-  value = aws_elb.web.dns_name
+  value = aws_lb.web.dns_name
 }
 
 output "dns_nginx-1" {

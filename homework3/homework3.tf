@@ -31,16 +31,16 @@ terraform {
 ##################################################################################
 
 module "vpc" {
-key_name = var.key_name
-private_key_path = var.private_key_path
-source = "./modules/vpc"
+  key_name         = var.key_name
+  private_key_path = var.private_key_path
+  source           = "./modules/vpc"
 
-#optionally configurable CIDR Blocks
-# network_address_space = "192.168.0.0/16"
+  #optionally configurable CIDR Blocks
+  # network_address_space = "192.168.0.0/16"
 
-# public_subnet_address_space = ["192.168.0.0/17", "192.168.128.0/18"]
+  # public_subnet_address_space = ["192.168.0.0/17", "192.168.128.0/18"]
 
-# private_subnet_address_space = ["192.168.192.0/19", "192.168.224.0/19"]
+  # private_subnet_address_space = ["192.168.192.0/19", "192.168.224.0/19"]
 
 }
 
