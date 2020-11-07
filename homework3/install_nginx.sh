@@ -11,6 +11,6 @@ sudo chmod 777 /etc/cron.d
 
 sudo cat <<EOF > /etc/cron.d/accessloghourly
 #!/bin/bash
-0 * * * * sudo aws s3 cp /var/log/nginx/access.log s3://liat-nginx-logs-282837837882"
+0 * * * * sudo aws s3 cp /var/log/nginx/access.log s3://liat-nginx-logs-282837837882/$HOSTNAME-access.log"
 chmod +x accessloghourly
 EOF
