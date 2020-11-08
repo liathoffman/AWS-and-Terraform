@@ -284,6 +284,7 @@ resource "aws_instance" "nginx" {
   tags = {
     Name = "nginx-AZ-${count.index + 1}"
   }
+
 }
 
 resource "aws_instance" "db-server" {
@@ -353,7 +354,6 @@ resource "aws_lb_listener" "web-servers" {
     target_group_arn = aws_lb_target_group.for_web.arn
   }
 }
-
 
 ##################################################################################
 # OUTPUT
