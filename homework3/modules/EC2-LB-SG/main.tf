@@ -222,15 +222,10 @@ resource "aws_lb" "web" {
   }
 }
   
-resource "aws_lb_target_group_attachment" "for_web1" {
+resource "aws_lb_target_group_attachment" "for_web" {
+  count            = length(var.public_subnets)
   target_group_arn = aws_lb_target_group.for_web.arn
-  target_id        = aws_instance.nginx[0].id
-  port             = 80
-}
-
-resource "aws_lb_target_group_attachment" "for_web2" {
-  target_group_arn = aws_lb_target_group.for_web.arn
-  target_id        = aws_instance.nginx[1].id
+  target_id        = aws_instance.nginx[count.index].id
   port             = 80
 }
 

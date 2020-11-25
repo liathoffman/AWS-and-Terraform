@@ -9,17 +9,17 @@ variable "aws_region" {
 }
 
 variable "network_address_space" { 
-    default = "192.168.0.0/16"
+    default = "10.0.0.0/16"
 }
 
 variable "public_subnet_address_space" { 
     type = list
-    default = ["192.168.0.0/17", "192.168.128.0/18"]
+    default = ["10.0.0.0/17", "10.0.128.0/18", "10.0.192.0/19"]
 }
 
 variable "private_subnet_address_space" { 
     type = list
-    default = ["192.168.192.0/19", "192.168.224.0/19"]
+    default = ["10.0.224.0/20", "10.0.240.0/21", "10.0.248.0/21"]
 }
 
 ##################################################################################
@@ -77,10 +77,8 @@ output "aws_elb_public_dns" {
   value = module.EC2-LB-SG.elb
 }
 
-output "dns_nginx-1" {
-  value = module.EC2-LB-SG.dns_nginx-1
+output "dns_nginx_servers" {
+  value = module.EC2-LB-SG.dns_nginx_servers
 }
 
-output "dns_nginx-2" {
-  value = module.EC2-LB-SG.dns_nginx-2
-}
+
