@@ -19,6 +19,14 @@ data "aws_ami" "ubuntu" {
 
 data "aws_elb_service_account" "main" {}
 
+data "aws_subnet_ids" "public" {
+  vpc_id = var.vpc_id
+  tags = {
+    Tier = "Public"
+  }
+}
+
+
 ##################################################################################
 # RESOURCES
 ##################################################################################
@@ -187,7 +195,7 @@ resource "aws_lb" "web" {
   name                        = "web"
   internal                    = false
   load_balancer_type          = "application"
-  subnets                     = [jsonencode(var.public_subnets)]
+  subnets                     = data.aws_subnet_ids.public.ids
   security_groups             = [aws_security_group.elb-sg.id]
 }
 

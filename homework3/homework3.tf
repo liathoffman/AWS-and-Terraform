@@ -8,6 +8,20 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
+variable "network_address_space" { 
+    default = "192.168.0.0/16"
+}
+
+variable "public_subnet_address_space" { 
+    type = list
+    default = ["192.168.0.0/17", "192.168.128.0/18"]
+}
+
+variable "private_subnet_address_space" { 
+    type = list
+    default = ["192.168.192.0/19", "192.168.224.0/19"]
+}
+
 ##################################################################################
 # PROVIDERS
 ##################################################################################
@@ -34,13 +48,9 @@ module "vpc" {
   key_name         = var.key_name
   private_key_path = var.private_key_path
   source           = "./modules/vpc"
-
-  #optionally configurable CIDR Blocks
-  # network_address_space = "192.168.0.0/16"
-
-  # public_subnet_address_space = ["192.168.0.0/17", "192.168.128.0/18"]
-
-  # private_subnet_address_space = ["192.168.192.0/19", "192.168.224.0/19"]
+  network_address_space = var.network_address_space
+  public_subnet_address_space = var.public_subnet_address_space
+  private_subnet_address_space = var.private_subnet_address_space
 
 }
 
@@ -51,11 +61,11 @@ module "EC2-LB-SG" {
 
   vpc_id = module.vpc.vpc_id
 
-  network_address_space = module.vpc.network_address_space
-
   public_subnets = module.vpc.public_subnets
 
   private_subnets = module.vpc.private_subnets
+
+  network_address_space = var.network_address_space
 
 }
 

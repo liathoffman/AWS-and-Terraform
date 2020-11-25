@@ -22,7 +22,7 @@ resource "aws_subnet" "public_subnets" {
   map_public_ip_on_launch = "true"
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   tags = {
-    Name = "public subnet-AZ-${count.index + 1}"
+    Tier = "Public"
   }
 }
 

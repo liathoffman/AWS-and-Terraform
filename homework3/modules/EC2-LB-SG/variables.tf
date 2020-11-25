@@ -13,10 +13,6 @@ variable "vpc_id" {
   type = string
 }
 
-variable "network_address_space" {
-  type = string
-}
-
 variable "public_subnets" {
   type = list
 }
@@ -24,4 +20,9 @@ variable "public_subnets" {
 variable "private_subnets" {
   type = list
 }
+
+variable "network_address_space" { 
+  type = string
+}
+
 
