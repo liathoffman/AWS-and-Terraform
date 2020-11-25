@@ -44,18 +44,33 @@ module "vpc" {
 
 }
 
+module "EC2-LB-SG" {
+  key_name         = var.key_name
+  private_key_path = var.private_key_path
+  source           = "./modules/EC2-LB-SG"
+
+  vpc_id = module.vpc.vpc_id
+
+  network_address_space = module.vpc.network_address_space
+
+  public_subnets = module.vpc.public_subnets
+
+  private_subnets = module.vpc.private_subnets
+
+}
+
 ##################################################################################
 # OUTPUT
 ##################################################################################
 
 output "aws_elb_public_dns" {
-  value = module.vpc.elb
+  value = module.EC2-LB-SG.elb
 }
 
 output "dns_nginx-1" {
-  value = module.vpc.dns_nginx-1
+  value = module.EC2-LB-SG.dns_nginx-1
 }
 
 output "dns_nginx-2" {
-  value = module.vpc.dns_nginx-2
+  value = module.EC2-LB-SG.dns_nginx-2
 }
