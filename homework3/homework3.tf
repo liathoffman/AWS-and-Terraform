@@ -14,12 +14,12 @@ variable "network_address_space" {
 
 variable "public_subnet_address_space" { 
     type = list
-    default = ["10.0.0.0/17", "10.0.128.0/18", "10.0.192.0/19"]
+    default = ["10.0.0.0/18", "10.0.64.0/18"]
 }
 
 variable "private_subnet_address_space" { 
     type = list
-    default = ["10.0.224.0/20", "10.0.240.0/21", "10.0.248.0/21"]
+    default = ["10.0.128.0/18", "10.0.192.0/18"]
 }
 
 ##################################################################################
@@ -55,6 +55,9 @@ module "vpc" {
 }
 
 module "EC2-LB-SG" {
+  depends_on       = [
+    module.vpc
+  ]
   key_name         = var.key_name
   private_key_path = var.private_key_path
   source           = "./modules/EC2-LB-SG"
