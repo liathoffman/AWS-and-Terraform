@@ -58,25 +58,25 @@ resource "aws_route_table" "public_rt" {
 }
 
 resource "aws_route_table_association" "rta-IG-association" {
-  count = 2
+  count = length(var.public_subnet_address_space)
 
   subnet_id      = aws_subnet.public_subnets[count.index].id
   route_table_id = aws_route_table.public_rt.id
 }
 
 resource "aws_eip" "elastic_ip_for_nat" {
-  count = 2
+  count = length(var.public_subnet_address_space)
   vpc   = true
 }
 
 resource "aws_nat_gateway" "ngw" {
-  count         = 2
+  count         = length(var.public_subnet_address_space)
   allocation_id = aws_eip.elastic_ip_for_nat[count.index].id
   subnet_id     = aws_subnet.public_subnets[count.index].id
 }
 
 resource "aws_route_table" "nat-gateway-rt" {
-  count  = 2
+  count  = length(var.public_subnet_address_space)
   vpc_id = aws_vpc.vpc.id
 
   route {
@@ -91,7 +91,7 @@ resource "aws_route_table" "nat-gateway-rt" {
 }
 
 resource "aws_route_table_association" "nat-gateway-rt-association" {
-  count          = 2
+  count          = length(var.public_subnet_address_space)
   subnet_id      = aws_subnet.private_subnets[count.index].id
   route_table_id = aws_route_table.nat-gateway-rt[count.index].id
 
